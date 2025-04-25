@@ -1,4 +1,5 @@
-from subprocess import Popen
+from datetime import datetime
+from subprocess import Popen, DEVNULL
 from mininet.topo import Topo
 from mininet.log import setLogLevel, info
 from mininet.net import Mininet
@@ -42,13 +43,50 @@ class MyNetwork:
         """Stop Mininet with current network"""
         self.net.stop()
 
+    def clear_metrics(self):
+        print('* Clearing metrics')
+        if os.path.exists("bandwidth.txt"):
+            os.remove("bandwidth.txt")
+        if os.path.exists("controller_resources.txt"):
+            os.remove("controller_resources.txt")
+
+    def start_metrics(self):
+        print('* Starting monitor')
+        cmd = f"bwm-ng -o csv -T rate -C ',' > bandwidth.txt &"
+        Popen(cmd, shell=True).wait()
+        c_cmd = f"sudo python3 cpu_track.py"
+        self.cont_proc = Popen(c_cmd, shell=True)
+
+    def stop_metrics(self):
+        print('* Stopping monitor')
+        cmd = "killall bwm-ng"
+        Popen(cmd, shell=True).wait()
+        self.cont_proc.terminate()
+
+    def start_ddos(self):
+        print('* Starting DDoS Attack')
+        print("** Attack started at:", datetime.now())
+        h1 = self.net.get('h1')
+        h2_ip = self.net.get('h2').IP()
+        h1.cmd(f"hping3 --flood --udp {h2_ip} &")
+
+    def stop_ddos(self):
+        print('* Stopping DDoS Attack')
+        cmd = "killall hping3"
+        Popen(cmd, shell=True).wait()
+        print("** Attack stopped at:", datetime.now())
+
 
 if __name__ == '__main__':
     setLogLevel('info')
     net = MyNetwork()
     net.clean_env()
-    net.start_net(controller_ip='127.0.0.1')  
-    CLI(net.net)  # Optional interactive CLI
+    net.start_net()
+    net.start_metrics()
+    net.start_ddos()
+    CLI(net.net)
+    net.stop_ddos()
+    net.stop_metrics()
     net.stop_net()
     net.clean_env()
 
