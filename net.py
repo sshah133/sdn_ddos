@@ -1,5 +1,8 @@
 from datetime import datetime
+import os
+import psutil
 from subprocess import Popen, DEVNULL
+import time
 from mininet.topo import Topo
 from mininet.log import setLogLevel, info
 from mininet.net import Mininet
@@ -16,6 +19,11 @@ class SimpleTopo(Topo):
         self.addLink(h2, s1)
 
 class MyNetwork:
+
+    def __init__(self):
+        if os.path.exists('timestamps.txt'):
+            os.remove('timestamps.txt')
+        self.ts_file = open('timestamps.txt', 'w')
 
     def clean_env(self):
         print(f"* Cleaning mininet environ")
@@ -56,22 +64,34 @@ class MyNetwork:
         Popen(cmd, shell=True).wait()
         c_cmd = f"sudo python3 cpu_track.py"
         self.cont_proc = Popen(c_cmd, shell=True)
+        self.ts_file.write(str(time.time())+'\n')
 
     def stop_metrics(self):
         print('* Stopping monitor')
         cmd = "killall bwm-ng"
         Popen(cmd, shell=True).wait()
         self.cont_proc.terminate()
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                cmdline = proc.info['cmdline']
+                if cmdline and 'cpu_track.py' in ' '.join(cmdline):
+                    proc.kill()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+        self.ts_file.write(str(time.time())+'\n')
+        self.ts_file.close()
 
     def start_ddos(self):
         print('* Starting DDoS Attack')
         print("** Attack started at:", datetime.now())
+        self.ts_file.write(str(time.time())+'\n')
         h1 = self.net.get('h1')
         h2_ip = self.net.get('h2').IP()
         h1.cmd(f"hping3 --flood --udp {h2_ip} &")
 
     def stop_ddos(self):
         print('* Stopping DDoS Attack')
+        self.ts_file.write(str(time.time())+'\n')
         cmd = "killall hping3"
         Popen(cmd, shell=True).wait()
         print("** Attack stopped at:", datetime.now())
@@ -83,9 +103,14 @@ if __name__ == '__main__':
     net.clean_env()
     net.start_net()
     net.start_metrics()
+    time.sleep(5)
+    #CLI(net.net)
     net.start_ddos()
-    CLI(net.net)
+    time.sleep(5)
+    #CLI(net.net)
     net.stop_ddos()
+    time.sleep(5)
+    #CLI(net.net)
     net.stop_metrics()
     net.stop_net()
     net.clean_env()
