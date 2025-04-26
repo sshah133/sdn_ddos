@@ -55,8 +55,8 @@ class MyNetwork:
         print('* Clearing metrics')
         if os.path.exists("bandwidth.txt"):
             os.remove("bandwidth.txt")
-        if os.path.exists("controller_resources.txt"):
-            os.remove("controller_resources.txt")
+        if os.path.exists("controller_usage.txt"):
+            os.remove("controller_usage.txt")
 
     def start_metrics(self):
         print('* Starting monitor')
@@ -101,6 +101,7 @@ if __name__ == '__main__':
     setLogLevel('info')
     net = MyNetwork()
     net.clean_env()
+    net.clear_metrics()
     net.start_net()
     net.start_metrics()
     time.sleep(5)

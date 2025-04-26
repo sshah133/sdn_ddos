@@ -16,7 +16,7 @@ def monitor_controller(pid, log_file='controller_usage.txt'):
     while True:
       try:
         proc = psutil.Process(pid)
-        cpu = proc.cpu_percent(interval=1)
+        cpu = proc.cpu_percent(interval=0.20)
         mem = proc.memory_percent()
         cmdline = ' '.join(proc.cmdline())
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
