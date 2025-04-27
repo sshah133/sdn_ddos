@@ -18,6 +18,16 @@ class SimpleTopo(Topo):
         self.addLink(h1, s1)
         self.addLink(h2, s1)
 
+class LessSimpleTopo(Topo):
+    def build(self):
+        s1 = self.addSwitch('s1')
+        h1 = self.addHost('h1')
+        h2 = self.addHost('h2')
+        h3 = self.addHost('h3')
+        self.addLink(h1, s1)
+        self.addLink(h2, s1)
+        self.addLink(h3, s1)
+
 class MyNetwork:
 
     def __init__(self):
@@ -30,15 +40,13 @@ class MyNetwork:
         cmd = "sudo mn -c"
         print(f"** Running: {cmd}")
         Popen(cmd, shell=True).wait()
-        #cmd = "sudo fuser -k 6633/tcp"
-        #print(f"** Running: {cmd}")
-        #Popen(cmd, shell=True).wait()
         print(f"* Done cleaning mininet environ")
     
     def start_net(self, controller_ip='127.0.0.1', controller_port=6633):
         """Build the topology and initialize the network with a remote controller"""
         controller = RemoteController('c0', ip=controller_ip, port=controller_port)
         self.net = Mininet(topo=SimpleTopo(), controller=controller)
+        #self.net = Mininet(topo=LessSimpleTopo(), controller=controller)
         self.net.start()
 
         print("Dumping host connections")
@@ -87,7 +95,7 @@ class MyNetwork:
         self.ts_file.write(str(time.time())+'\n')
         h1 = self.net.get('h1')
         h2_ip = self.net.get('h2').IP()
-        h1.cmd(f"hping3 --flood --udp {h2_ip} &")
+        h1.cmd(f"hping3 --flood {h2_ip} &")
 
     def stop_ddos(self):
         print('* Stopping DDoS Attack')
@@ -115,7 +123,7 @@ if __name__ == '__main__':
     time.sleep(5)
     #CLI(net.net)
     net.stop_ddos()
-    time.sleep(5)
+    time.sleep(15)
     #CLI(net.net)
     net.stop_metrics()
     net.stop_net()
