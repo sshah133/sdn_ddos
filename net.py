@@ -95,6 +95,11 @@ class MyNetwork:
         cmd = "killall hping3"
         Popen(cmd, shell=True).wait()
         print("** Attack stopped at:", datetime.now())
+    
+    def create_graphs(self):
+        print('* Creating Graphs')
+        cmd = f"sudo python3 create_graphs.py"
+        Popen(cmd, shell=True).wait()
 
 
 if __name__ == '__main__':
@@ -115,4 +120,5 @@ if __name__ == '__main__':
     net.stop_metrics()
     net.stop_net()
     net.clean_env()
+    net.create_graphs()
 
